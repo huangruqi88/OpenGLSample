@@ -56,6 +56,7 @@ public class MyGLRenderer implements GLSurfaceView.Renderer {
      */
     @Override
     public void onDrawFrame(GL10 gl10) {
+        //GLES31.glClear()必须在三角形绘制之前
         GLES31.glClear(GLES31.GL_COLOR_BUFFER_BIT);
         mTriangle.draw();
     }

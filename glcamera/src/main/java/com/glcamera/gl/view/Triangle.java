@@ -1,8 +1,8 @@
-package com.ruqii.com.openglview.gl.view;
+package com.glcamera.gl.view;
 
 import android.opengl.GLES31;
 
-import com.ruqii.com.openglview.gl.MyGLRenderer;
+import com.glcamera.gl.MyGLRenderer;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -21,7 +21,11 @@ import java.nio.FloatBuffer;
  *
  */
 public class Triangle {
+
     private final int mProgram;
+    /**
+     * 顶点数据缓存区
+     */
     private FloatBuffer vertexBuffer;
 
     // 这个数组中每个顶点的坐标数
@@ -40,13 +44,38 @@ public class Triangle {
      *  设置颜色以及透明度
      */
     float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 1.0f };
-
+    /**
+     * shader的坐标位置
+     */
+//    private final String vertexShaderCode =
+//            "attribute vec4 vPosition;" +
+//                    "void main() {" +
+//                    "  gl_Position = vPosition;" +
+//                    "}";
     private final String vertexShaderCode =
-            "attribute vec4 vPosition;" +
+            // 这个矩阵成员变量提供了一个要操作的钩子
+            // 使用这个顶点着色器的对象的坐标
+            "uniform mat4 uMVPMatrix;" +
+                    "attribute vec4 vPosition;" +
                     "void main() {" +
-                    "  gl_Position = vPosition;" +
+                    // the matrix must be included as a modifier of gl_Position
+                    // 该矩阵必须包含为gl_Position的修饰符
+                    // Note that the uMVPMatrix factor *must be first* in order
+                    // 请注意，uMVPMatrix因子 *must be first* 即必须排序在第一个
+                    // for the matrix multiplication product to be correct.
+                    // 这样才能得到一个正确的乘积
+                    "  gl_Position = uMVPMatrix * vPosition;" +
                     "}";
 
+    /**
+     * Use to access and set the view transformation
+     * 用于访问和设置视图转换
+     */
+    private int mMVPMatrixHandle;
+
+    /**
+     * shader的纹理区域渲染
+     */
     private final String fragmentShaderCode =
             "precision mediump float;" +
                     "uniform vec4 vColor;" +
@@ -62,7 +91,6 @@ public class Triangle {
     private final int vertexCount = triangleCoords.length / COORDS_PER_VERTEX;
     // 4 bytes per vertex
     private final int vertexStride = COORDS_PER_VERTEX * 4;
-
 
     public Triangle() {
         // 为形状坐标初始化顶点字节缓冲区
@@ -85,7 +113,6 @@ public class Triangle {
 
         //Vertex shader（顶点着色器），控制顶点的绘制，指定坐标、变换等。
         int vertexShader = MyGLRenderer.loadShader(GLES31.GL_VERTEX_SHADER,vertexShaderCode);
-
         //Fragment shader（片段着色器），控制形状内区域渲染，纹理填充内容。
         int fragmentShader = MyGLRenderer.loadShader(GLES31.GL_FRAGMENT_SHADER,fragmentShaderCode);
 
@@ -103,33 +130,51 @@ public class Triangle {
 
     }
 
-
-    public void draw() {
-        // Add program to OpenGL ES environment 向OpenGL ES环境中添加进APP
+    /**
+     * 绘制三角形
+     * @param mvpMatrix 传入计算出的变换矩阵
+     */
+    public void draw(float[] mvpMatrix) {
+        // 向OpenGL ES环境中添加
         GLES31.glUseProgram(mProgram);
 
-        // get handle to vertex shader's vPosition member 获取顶点着色器的vPosition成员的句柄
+        // 获取顶点着色器的vPosition成员的句柄
         mPositionHandle = GLES31.glGetAttribLocation(mProgram, "vPosition");
 
-        // Enable a handle to the triangle vertices 启用三角形顶点的句柄
+        // 启用三角形顶点的句柄
         GLES31.glEnableVertexAttribArray(mPositionHandle);
 
-        // Prepare the triangle coordinate data 准备三角坐标数据
+        // 准备三角坐标数据
         GLES31.glVertexAttribPointer(mPositionHandle, COORDS_PER_VERTEX,
                 GLES31.GL_FLOAT, false,
                 vertexStride, vertexBuffer);
 
-        // get handle to fragment shader's vColor member  获取fragmentShader的vColor成员句柄
+        // 获取fragmentShader的vColor成员句柄
         mColorHandle = GLES31.glGetUniformLocation(mProgram, "vColor");
 
-        // Set color for drawing the triangle 设置三角形的颜色
+        // 设置三角形的颜色
         GLES31.glUniform4fv(mColorHandle, 1, color, 0);
 
-        // Draw the triangle 绘制三角形
+        // 绘制三角形
         GLES31.glDrawArrays(GLES31.GL_TRIANGLES, 0, vertexCount);
 
-        // Disable vertex array 关闭定点数组
+        // 关闭定点数组
         GLES31.glDisableVertexAttribArray(mPositionHandle);
+
+
+        // 获取形状变换矩阵的句柄（mMVPMatrixHandle）
+        mMVPMatrixHandle = GLES31.glGetUniformLocation(mProgram, "uMVPMatrix");
+
+        // 将投影和视图转换传递给着色器
+        GLES31.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
+
+        // 绘制三角形
+        GLES31.glDrawArrays(GLES31.GL_TRIANGLES, 0, vertexCount);
+
+        // 关闭定点数组
+        GLES31.glDisableVertexAttribArray(mPositionHandle);
+
+
     }
 
 

@@ -1,1 +1,1 @@
-include ':app', ':openglview'
+include ':app', ':openglview', ':glcamera'
