@@ -11,6 +11,7 @@
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/glcamera" />
             <option value="$PROJECT_DIR$/openglview" />
+            <option value="$PROJECT_DIR$/sport" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />
