@@ -1,1 +1,1 @@
-include ':app', ':openglview', ':glcamera', ':sport'
+include ':app', ':openglview', ':glcamera', ':sport', ':ontouch'
